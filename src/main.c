@@ -130,8 +130,14 @@ int main(void) {
                      "/home/nikita/assembler/x64/test_data/ref2");
   //>>>>>>>>>>>>>>>>>>>>>
   if (!exit_code)
-    exit_code = test("/home/nikita/assembler/x64/test_data/lorem_ipsum_encoded.bin",
-                     "/home/nikita/assembler/x64/test_data/lorem_ipsum.txt");
+    exit_code =
+        test("/home/nikita/assembler/x64/test_data/lorem_ipsum_encoded.bin",
+             "/home/nikita/assembler/x64/test_data/lorem_ipsum.txt");
+
+  if (!exit_code)
+    exit_code =
+        test("/home/nikita/assembler/x64/test_data/in5",
+             "/home/nikita/assembler/x64/test_data/ref5");
 
   if (!exit_code)
     exit_code = test("/home/nikita/assembler/x64/test_data/snail.pnm.out",
