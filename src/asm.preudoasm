@@ -1,23 +1,5 @@
 section .data
 
-                 counter: db "%i", 10, 0
-           table_64_info: db "           table_64_info: %p", 10, 0
-          bs_ptr_64_info: db "          bs_ptr_64_info: %p", 10, 0
-start_by_copying_64_info: db "start_by_copying_64_info: %zu", 10, 0
-     bs_cur_data_64_info: db "     bs_cur_data_64_info: %lx", 10, 0
-     bs_body_end_64_info: db "     bs_body_end_64_info: %p", 10, 0
-   bs_actual_end_64_info: db "   bs_actual_end_64_info: %p", 10, 0
-
-       next_code_32_info: db "       next_code_32_info: %i", 10, 0
-     code_length_32_info: db "     code_length_32_info: %i", 10, 0
-        old_code_32_info: db "        old_code_32_info: %i", 10, 0
-            code_32_info: db "            code_32_info: %i", 10, 0
-          result_32_info: db "          result_32_info: %i", 10, 0
-
-     bs_bits_left_8_info: db "     bs_bits_left_8_info: %hhu", 10, 0
-
-               delimiter: db "===================", 10, 0
-
 section .text
 ; size_t lzw_decode(const uint8_t* in, size_t in_size, uint8_t* restrict out, size_t out_size);
 global lzw_decode
@@ -31,15 +13,14 @@ lzw_decode:
 ;  const uint_t* restrict out
 ;        size_t           out_size
 ; <<<<<<<
-    push rbp
-    mov rbp, rsp
+    push        rbp
+    mov         rbp, rsp
 
-    push rbx
-    push rsi
-    push rdi
-    push r12
-    push r13
-    push r15
+    push        rbx
+    push        rsi
+    push        rdi
+    push        r12
+    push        r13
 
 ; >>>
 ; Переменные
@@ -57,7 +38,8 @@ lzw_decode:
 ;           int           result_32
 ;
 ;       uint8_t           bs_bits_left_8
-    mov         rax, (in)
+
+    mov         rax, (in) ; hehe
     mov         rbx, rax
     add         rax, 3
     mov         ecx, 3
@@ -90,7 +72,7 @@ lzw_decode:
     xor         ecx, ecx
 loop1:
     cmp         rcx, rdx
-    jae         .lend1
+    jge         .lend1
 
     shl         rax, 8
     or          rax, [rsi + rcx]              ; bs_cur_data_64 << 8 | in[b];
@@ -109,7 +91,7 @@ loop1:
 
     mov         (bs_actual_end_64), rcx
 
-    ; End of initializing bit_stream
+; End of initializing bit_stream
 
     mov         dword (next_code_32), 258
     mov         dword (code_length_32), 9
@@ -126,17 +108,16 @@ loop1:
     inc         rcx
 
     cmp         rcx, 256                ; i < 256
-    jb          .loop2
-    
-    mov         r15, -1
+    jl          .loop2
+
 .mainloop:
-                                        ; rax(table_64 + 16 * 256), rbx(in), rcx(256), rsi(bs_body_end_64), rdx(start_by_copying_64)
+; rax(table_64 + 16 * 256), rbx(in), rcx(256), rsi(bs_body_end_64), rdx(start_by_copying_64)
 ; rax(table_64 + 16 * 256), rcx(256), rdx(start_by_copying_64), rbx(in), rsi(bs_body_end_64), rdi(?), r10(?), r11(?), r12(?), r13(?)
 ; rax(?),                   rcx(256), rdx(start_by_copying_64), rbx(in), rsi(bs_body_end_64), rdi(?), r10(?), r11(?), r12(?), r13(?)
     movzx       eax, byte (bs_bits_left_8)
     cmp         eax, dword (code_length_32)      ; bs_bits_left_8 < code_length_32
-                                        ; rax(bs_bits_left_8), rbx(in), rcx(256), rsi(bs_body_end_64), rdx(start_by_copying_64)
-    jae         .fi3
+; rax(bs_bits_left_8), rbx(in), rcx(256), rsi(bs_body_end_64), rdx(start_by_copying_64)
+    jge         .fi3
 
     mov         rsi, (bs_ptr_64)
     mov         rdx, (bs_cur_data_64)
@@ -162,20 +143,20 @@ loop1:
     shl         esi, cl                 ; (1 << code_length_32)
     dec         esi                     ; ((1 << code_length_32) - 1)
     and         rdx, rsi
-                                        ; rax(bs_bits_left_8), rcx(code_length_32), rdx((bs_cur_data_64 >> (bs_bits_left_8 - code_length_32)) & ((1 << code_length_32) - 1)), rbx(code_length_32), rsi((1 << code_length_32) - 1)
+; rax(bs_bits_left_8), rcx(code_length_32), rdx((bs_cur_data_64 >> (bs_bits_left_8 - code_length_32)) & ((1 << code_length_32) - 1)), rbx(code_length_32), rsi((1 << code_length_32) - 1)
     mov         (code_32), edx
 ; rax(bs_bits_left_8), rcx(code_length_32), rdx(bs_cur_data_64 >> (bs_bits_left_8 - code_length_32) & ((1 << code_length_32) - 1)), rbx(code_length_32), rsi((1 << code_length_32) - 1), rdi(?), r10(?), r11(?), r12(?), r13(?)
-                                        ; rax(bs_bits_left_8), rcx(code_length_32), rdx(code_32), rbx(code_length_32), rsi((1 << code_length_32) - 1)
+; rax(bs_bits_left_8), rcx(code_length_32), rdx(code_32), rbx(code_length_32), rsi((1 << code_length_32) - 1)
 
     sub         eax, ebx
-                                        ; rax(bs_bits_left_8 - code_length_32), rcx(code_length_32), rdx(code_32), rbx(code_length_32), rsi((1 << code_length_32) - 1)
+; rax(bs_bits_left_8 - code_length_32), rcx(code_length_32), rdx(code_32), rbx(code_length_32), rsi((1 << code_length_32) - 1)
     mov         (bs_bits_left_8), al    ; bs_bits_left_8 -= code_length_32;
 
     mov         rdi, (bs_body_end_64)
     mov         rsi, (bs_ptr_64)
     cmp         rsi, rdi                ; if (bs_ptr_64 == bs_body_end_64)
 ; rax(bs_bits_left_8), rcx(code_length_32), rdx(bs_cur_data_64 >> (bs_bits_left_8 - code_length_32) & ((1 << code_length_32) - 1)), rbx(code_length_32), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
-                                        ; rax(bs_bits_left_8), rcx(code_length_32), rdx(code_32), rbx(code_length_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rcx(code_length_32), rdx(code_32), rbx(code_length_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
     jne         .fi4
 
     mov         rcx, rsi                ; rcx = bs_ptr_64
@@ -185,125 +166,36 @@ loop1:
 .loop3:
 ; rax(bs_bits_left_8), rcx(bs_ptr_64), rdx(bs_actual_end_64), rbx(bs_cur_data_64), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
     cmp         rcx, rdx                ; while (bs_ptr < bs_actual_end)
-                                        ; rax(bs_bits_left_8), rcx(bs_ptr_64), rdx(bs_actual_end_64), rbx(bs_cur_data_64), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rcx(bs_ptr_64), rdx(bs_actual_end_64), rbx(bs_cur_data_64), rsi(bs_ptr_64), rdi(bs_body_end_64)
     jae         .lend3
 
     shl         rbx, 8
     or          rbx, [rcx]              ; (bs_cur_data_64 << 8) | *bs_ptr_64
     inc         rcx                     ; bs_ptr_64++
     add         rax, 8
-                                        ; rax(bs_bits_left_8 + 8), rcx(bs_ptr_64 + 1), rdx(bs_actual_end_64), rbx((bs_cur_data_64 << 8) | *bs_ptr_64), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8 + 8), rcx(bs_ptr_64 + 1), rdx(bs_actual_end_64), rbx((bs_cur_data_64 << 8) | *bs_ptr_64), rsi(bs_ptr_64), rdi(bs_body_end_64)
     jmp         .loop3
 .lend3:
     mov         (bs_cur_data_64), rbx
     mov         (bs_ptr_64), rcx
     mov         (bs_bits_left_8), al
 ; rax(bs_bits_left_8), rcx(bs_ptr_64), rdx(bs_actual_end_64), rbx(bs_cur_data_64), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
-                                        ; rax(bs_bits_left_8), rcx(bs_ptr_64), rdx(bs_actual_end_64), rbx(bs_cur_data_64), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rcx(bs_ptr_64), rdx(bs_actual_end_64), rbx(bs_cur_data_64), rsi(bs_ptr_64), rdi(bs_body_end_64)
 
 .fi4:
-    inc         r15
 
-    cmp         dword (result_32), 29990
-    jb          .skip_log
-
-    push        rax
-    push        rbx
-    push        rcx
-    push        rsi
-    push        rdx
-    push        r15
-
-;   printf(counter)
-    lea         rdi, [rel counter]
-    mov         rsi, r15
-    call        printf WRT ..plt
-
-;   printf(table_64_info)
-    lea         rdi, [rel table_64_info]
-    lea         rsi, (table_64)
-    call        printf WRT ..plt
-
-;   printf(bs_ptr_64_info)
-    lea         rdi, [rel bs_ptr_64_info]
-    mov         rsi, (bs_ptr_64)
-    call        printf WRT ..plt
-
-;   printf(start_by_copying_64_info)
-    lea         rdi, [rel start_by_copying_64_info]
-    mov         rsi, (start_by_copying_64)
-    call        printf WRT ..plt
-
-;   printf(bs_cur_data_64_info)
-    lea         rdi, [rel bs_cur_data_64_info]
-    mov         rsi, (bs_cur_data_64)
-    call        printf WRT ..plt
-
-;   printf(bs_body_end_64_info)
-    lea         rdi, [rel bs_body_end_64_info]
-    mov         rsi, (bs_body_end_64)
-    call        printf WRT ..plt
-
-;   printf(bs_actual_end_64_info)
-    lea         rdi, [rel bs_actual_end_64_info]
-    mov         rsi, (bs_actual_end_64)
-    call        printf WRT ..plt
-
-
-;   printf(next_code_32_info)
-    lea         rdi, [rel next_code_32_info]
-    mov         esi, (next_code_32)
-    call        printf WRT ..plt
-
-;   printf(code_length_32_info)
-    lea         rdi, [rel code_length_32_info]
-    mov         esi, (code_length_32)
-    call        printf WRT ..plt
-
-;   printf(old_code_32_info)
-    lea         rdi, [rel old_code_32_info]
-    mov         esi, (old_code_32)
-    call        printf WRT ..plt
-
-;   printf(code_32_info)
-    lea         rdi, [rel code_32_info]
-    mov         esi, (code_32)
-    call        printf WRT ..plt
-
-;   printf(result_32_info)
-    lea         rdi, [rel result_32_info]
-    mov         esi, (result_32)
-    call        printf WRT ..plt
-
-;   printf(bs_bits_left_8_info)
-    lea         rdi, [rel bs_bits_left_8_info]
-    movzx       esi, byte (bs_bits_left_8)
-    call        printf WRT ..plt
-
-;   printf(delimiter)
-    lea         rdi, [rel delimiter]
-    call        printf WRT ..plt
-
-    pop         r15
-    pop         rdx
-    pop         rsi
-    pop         rcx
-    pop         rbx
-    pop         rax
-    int3
-.skip_log:
 ; rax(bs_bits_left_8), rcx(?), rdx(?), rbx(?), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
-                                        ; rax(bs_bits_left_8), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rsi(bs_ptr_64), rdi(bs_body_end_64)
     mov         edx, (code_32)
 
     cmp         edx, 256                ; if (code == 256)
-                                        ; rax(bs_bits_left_8), rdx(code_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rdx(code_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
 ; rax(bs_bits_left_8), rcx(?), rdx(code_32), rbx(?), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
     jne         .fi5
     mov         dword (next_code_32), 258
     mov         dword (code_length_32), 9
     mov         dword (old_code_32), -1
-                                        ; rax(bs_bits_left_8), rdx(code_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rdx(code_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
 ; rax(?), rcx(?), rdx(?), rbx(?), rsi(?), rdi(?), r10(?), r11(?), r12(?), r13(?)
     mov         rbx, (in)
     mov         rcx, 256
@@ -314,11 +206,11 @@ loop1:
 
 .fi5:
     cmp         edx, 257
-                                        ; rax(bs_bits_left_8), rdx(code_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rdx(code_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
     je          .mlend
 .else:
     cmp         dword (old_code_32), -1       ; if (old_code == -1)
-                                        ; rax(bs_bits_left_8), rdx(code_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rdx(code_32), rsi(bs_ptr_64), rdi(bs_body_end_64)
 ; rax(bs_bits_left_8), rcx(?), rdx(code_32), rbx(?), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
     jne         .fi6
     lea         rbx, (table_64)
@@ -327,7 +219,7 @@ loop1:
     xchg        rax, rcx
 ; rax(code_32), rcx(bs_bits_left_8), rdx(code_32), rbx(table_64), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
     push        rdx
-    mov         r10, 16    
+    mov         r10, 16
     mul         r10
     pop         rdx
     xchg        rax, rcx
@@ -336,17 +228,17 @@ loop1:
     lea         rsi, [rbx + rcx]        ; src = (uint8_t*)&table[code];
     movzx       ecx, word [rsi + 14]    ; len = table[code].len;
 
-    cmp         ecx, 14                 ; if (len > 14) 
+    cmp         ecx, 14                 ; if (len > 14)
 
 ; rax(bs_bits_left_8), rcx(len_16), rdx(code_32), rbx(table_64), rsi(&table_64[code_32]), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
     jbe         .fi_not_small_obj
     mov         rsi, [rsi]
-                                        ; rax(bs_bits_left_8), rcx(len_16), rdx(code_32), rbx(table_64), rsi(*(uint8_t**)table_64[code_32]), rdi(bs_body_end_64)
+; rax(bs_bits_left_8), rcx(len_16), rdx(code_32), rbx(table_64), rsi(*(uint8_t**)table_64[code_32]), rdi(bs_body_end_64)
 .fi_not_small_obj:
-                                        ; rax(bs_bits_left_8), rcx(len_16), rdx(code_32), rbx(table_64), rsi(src), rdi(bs_body_end_64)    
+; rax(bs_bits_left_8), rcx(len_16), rdx(code_32), rbx(table_64), rsi(src), rdi(bs_body_end_64)
     mov         rax, (out)
     lea         rdi, [rsi + rcx]
-                                        ; rax(out), rcx(len_16), rdx(code_32), rbx(table_64), rsi(src), rdi(src + len)
+; rax(out), rcx(len_16), rdx(code_32), rbx(table_64), rsi(src), rdi(src + len)
 .loop4:
 ; rax(out), rcx(len_16), rdx(code_32), rbx(table_64), rsi(src), rdi(src + len_16), r10(?), r11(?), r12(?), r13(?)
     movzx       ebx, byte [rsi]
@@ -360,12 +252,12 @@ loop1:
     add         (result_32), ecx        ; result += len;
 ; rax(out), rcx(len_16), rdx(code_32), rbx(*src), rsi(src + len_16), rdi(src + len_16), r10(?), r11(?), r12(?), r13(?)
     jmp         .fiend
-                                        ; rax(out), rcx(len), rdx(code_32), rbx(src[len]), rsi(src + len), rdi(src + len)
+; rax(out), rcx(len), rdx(code_32), rbx(src[len]), rsi(src + len), rdi(src + len)
 
 .fi6: ; if (code < next_code)
     cmp         edx, (next_code_32)
 ; rax(bs_bits_left_8), rcx(?), rdx(code_32), rbx(?), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
-    jae         .fi7
+    jge         .fi7
     mov         r10d, (old_code_32)
     lea         rbx, (table_64)
     mov         eax, r10d
@@ -400,7 +292,7 @@ loop1:
     sub         rdi, 16
     sub         rsi, 16
     add         word [rdi + 14], 1      ; next.len++;
-                                        ; rax(?), rcx(16), rdx(?), rbx(table_64), rsi(&table_64[old_code_32]), rdi(next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
+; rax(?), rcx(16), rdx(?), rbx(table_64), rsi(&table_64[old_code_32]), rdi(next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
 ; rax(&table_64[old_code_32]), rcx(?), rdx(?), rbx(table_64), rsi(&table_64[old_code_32]), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
     jmp         .fi8
 .else1:
@@ -413,11 +305,11 @@ loop1:
     neg         rax
     add         rax, (out)
     mov         [rdi], rax              ; next.data.ptr = out - old_code_len;
-                                        ; rax(out - old_code_len_16), rcx(?), rdx(?), rbx(table_64), rsi(bs_ptr_64), rdi(next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
+; rax(out - old_code_len_16), rcx(?), rdx(?), rbx(table_64), rsi(bs_ptr_64), rdi(next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
 
 .fi8: ; write(get(code))
 ; rax(?), rcx(?), rdx(?), rbx(table_64), rsi(?), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
-                                        ; rax(?), rcx(?), rdx(?), rbx(table_64), rsi(?), rdi(next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
+; rax(?), rcx(?), rdx(?), rbx(table_64), rsi(?), rdi(next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
     mov         rax, r13
     mov         rdx, 16
     mul         rdx
@@ -443,7 +335,7 @@ loop1:
     jb          .loop5
 ; rax(out + len_16), rcx(len_16), dl(src[len_16]), rbx(table_64), rsi(src), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(len_16), r13(code_32)
     mov         (out), rax
-    add         (result_32), r12d        ; result += len;    
+    add         (result_32), r12d        ; result += len;
 ; rax(out), rcx(?), rdx(?), rbx(table_64), rsi(src), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(len_16), r13(code_32)
     cmp         r11, 14                ; if (old_code_len < 14)
 ; rax(out), rcx(?), rdx(?), rbx(table_64), rsi(src), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(len_16), r13(code_32)
@@ -470,6 +362,12 @@ loop1:
 ; rax(bs_bits_left_8), rcx(?), rdx(code_32), rbx(?), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
     mov         eax, (old_code_32)
     lea         rbx, (table_64)
+    cmp         eax, 0
+    jge         .skipo
+    cmp         eax, 4096
+    jl          .skipo
+    int3
+.skipo:
     mov         r13, rdx
     mov         rdx, 16
     mul         rdx
@@ -517,8 +415,8 @@ loop1:
     mov         rdx, 16
     mul         rdx
     add         rax, rbx
-                                        ; rax(& table_64[old_code_32]), rcx(?), rdx(?), rbx(table_64), rsi(?), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
-                                        ; rax(src), rcx(?), rdx(?), rbx(table_64), rsi(?), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
+; rax(& table_64[old_code_32]), rcx(?), rdx(?), rbx(table_64), rsi(?), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
+; rax(src), rcx(?), rdx(?), rbx(table_64), rsi(?), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
     mov         rsi, rax
     movzx       eax, word [rsi + 14]    ; len = table[old_code].len;
 
@@ -528,7 +426,7 @@ loop1:
     mov         rsi, [rsi]              ; src = *((uint8_t**)src);
 .fi13:
 ; rax(len_16), rcx(?), rdx(?), rbx(table_64), rsi(src_64), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
-                                        ; rax(len_16), rcx(?), rdx(?), rbx(table_64), rsi(src_64), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
+; rax(len_16), rcx(?), rdx(?), rbx(table_64), rsi(src_64), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(?), r13(code_32)
     mov         r12, rax
     mov         rax, (out)
     xor         ecx, ecx
@@ -541,7 +439,7 @@ loop1:
     cmp         rcx, r12
 ; rax(out + 1), rcx(0 + 1), dl(src[0]), rbx(table_64), rsi(src_64), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(len_16), r13(code_32)
     jb          .loop6
-    
+
     mov         dl, [rsi]
     mov         [rax], dl               ; *out = src[0];
     inc         rax                     ; out++;
@@ -555,7 +453,7 @@ loop1:
     cmp         ecx, 1
 ; rax(next_code_32 + 2), rcx(popcnt(next_code_32 + 2)), dl(src_64[0]), rbx(table_64), rsi(src_64), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(len_16), r13(code_32)
     jne         .fi14
-    add         dword (code_length_32), 1; if (__builtin_popcount(next_code + 1) == 1) code_length++;    
+    add         dword (code_length_32), 1; if (__builtin_popcount(next_code + 1) == 1) code_length++;
 .fi14:
 ; rax(next_code_32 + 2), rcx(popcnt(next_code_32 + 2)), dl(src_64[0]), rbx(table_64), rsi(src_64), rdi(&next_64), r10(old_code_32), r11(old_code_len_16), r12(len_16), r13(code_32)
     dec         rax
@@ -572,21 +470,18 @@ loop1:
 ; rax(?), rcx(256), rdx(start_by_copying_64), rbx(in), rsi(bs_body_end_64), rdi(?), r10(?), r11(?), r12(?), r13(?)
     jmp         .mainloop
 .mlend:
-    ; rax(bs_bits_left_8), rcx(?), rdx(code_32), rbx(?), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
+; rax(bs_bits_left_8), rcx(?), rdx(code_32), rbx(?), rsi(bs_ptr_64), rdi(bs_body_end_64), r10(?), r11(?), r12(?), r13(?)
     mov         r13d, (result_32)
 
 ; >>>
 
+    mov         eax, r13d
 
-    mov eax, r13d
+    pop         r13
+    pop         r12
+    pop         rdi
+    pop         rsi
+    pop         rbx
 
-    pop r15
-    pop r13
-    pop r12
-    pop rdi
-    pop rsi
-    pop rbx
-
-
-    pop rbp
+    pop         rbp
     ret
